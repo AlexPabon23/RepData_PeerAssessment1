@@ -5,21 +5,71 @@ output:
     keep_md: true
 ---
 
-
 ## Loading and preprocessing the data
-
+#unzip data
+dlurl <- 'http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip'  
+download.file(dlurl,destfile='repdata%2Fdata%2Factivity.zip',mode='wb')  
+unzip('repdata%2Fdata%2Factivity.zip')
+report <- read.csv('activity.csv')
 
 
 ## What is mean total number of steps taken per day?
 
 
+Steps_By_Day <- aggregate(steps~date,report,sum,na.rm=T)
+  #historam number of steps each day
+
+hist(Steps_By_Day$steps,main='Historam number of steps each day',xlab = 'Steps each day')
+
+rmean <- mean(Steps_By_Day$steps)
+rmean
+
+
+rmedian <- median(Steps_By_Day$steps)
+rmedian
+
+
 
 ## What is the average daily activity pattern?
+Steps_By_Interval <- aggregate(steps~interval,report,mean,na.rm=T)
+plot(Steps_By_Interval$interval,Steps_By_Interval$steps, type='l',col =1, main='The average daily activity pattern',xlab='5-mins Time Interval',ylab='Average number of steps')
 
+Steps_By_Interval$interval[which.max((Steps_By_Interval$steps))]
 
 
 ## Imputing missing values
+sum(is.na(report$steps))
+
+  #New Dataset
+report$steps[is.na(report$steps)==T] <- mean(report$steps, na.rm=TRUE)
+
+x2 <- aggregate(steps~date,report,sum)
+hist(x2$steps,main='Historam number of steps each day computed',xlab = 'Steps each day')
+
+mean(x2$steps)
+
+median(x2$steps)
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+wkday <- function(dat_val) {
+  wd <- weekdays(as.Date(dat_val, '%Y-%m-%d'))
+  if  (!(wd == 'Saturday' || wd == 'Sunday')) {
+    x <- 'Weekday'
+  } 
+  else {
+    x <- 'Weekend'
+  }
+  x
+}
+
+
+report$Day <- as.factor(sapply(report$date, wkday))
+install.packages("ggplot2")
+library(ggplot2)
+report_activity <- aggregate(steps~interval+Day,report,mean)
+g<- ggplot(report_activity, aes(interval,steps))
+g <-g+ geom_line(stat = 'identity', aes(color='Day')) + facet_grid(Day~.)
+g+ labs(x= '5 mins Interval', y = "Average of Steps") + ggtitle("The dataset with two levels – “weekday” and “weekend”")
